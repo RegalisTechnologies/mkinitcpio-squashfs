@@ -14,31 +14,32 @@ List of supported protocols:
 Kernel parameters:
 ------------------
 
-squashfs=<image-source>
-squashfs\_copy=<image-copy>
+* squashfs=\<image-source\>
+* squashfs\_copy=\<image-copy\>
 
-<image-source> can be remote or local location
-for remote location just use URL for example:
+*\<image-source\>* can be remote or local location.
+
+For remote location just use URL for example:
 
 * squashfs=http://192.168.1.1/images/archlinux.squashfs
 
-for local location use DEVICE:PATH syntax for example:
+for local location use **DEVICE:PATH** syntax for example:
 
 * squashfs=/dev/sda1:/images/archlinux.squashfs
 * squashfs=LABEL=SquashFSImages:/images/archlinux.squashfs
 * squashfs=UUID=3c1d5e55-(...):/images/archlinux.squashfs
 
-It is also possible to type AUTO as PATH, then script will search for
+It is also possible to type *AUTO* as *PATH*, then script will search for
 **first file** which name ends with .sfs or .squashfs
 
-<image-copy> can be one of {true, 1, 0, false} default is false
+*\<image-copy\>* can be one of {true, 1, 0, false} default is false
 
-If <image-copy> is set to true or 1, then <image-source> will be copied
+If *\<image-copy\>* is set to true or 1, then *\<image-source\>* will be copied
 to RAM. This option is forced to true while you use remote location.
 
 Example with squashfs\_copy:
 
--> squashfs=/dev/sda1:/images/archlinux.squashfs squashfs\_copy=true
+* squashfs=/dev/sda1:/images/archlinux.squashfs squashfs\_copy=true
 
 **NOTE**: After copying, you can remove device from your computer
 
@@ -48,7 +49,7 @@ mkinitcpio.conf
 If you are going to use remote locations, add *net* (from mkinitcpio-nfs-utils)
 before *squashfs* for example:
 
-* HOOKS="base udev modconf keyboard block net squashfs filesystems"
+* HOOKS="base udev modconf keyboard **block net** squashfs filesystems"
 
 It is also required to place *block* before squashfs if you will use
 block devices as image source.
