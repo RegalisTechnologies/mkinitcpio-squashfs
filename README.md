@@ -10,26 +10,39 @@ List of supported protocols:
   * HTTP
   * HTTPS
   * FTP
+  * NFS
 
 Kernel parameters:
 ------------------
 
 * squashfs=\<image-source\>
 * squashfs\_copy=\<image-copy\>
+* squashfs\_source\_opts=\<image-source-options\>
+
 
 *\<image-source\>* can be remote or local location.
 
-For remote location just use URL for example:
+For remote HTTP(s) or FTP location just use URL for example:
 
 * squashfs=http://192.168.1.1/images/archlinux.squashfs
 
-for local location use **DEVICE:PATH** syntax for example:
+For NFS location use following syntax:
+
+* (nfs|nfs4)://HOST:HOST\_PATH:IMAGE\_PATH
+
+Examples:
+
+* squashfs=nfs://192.168.1.1:/images:archlinux.squashfs
+* squashfs=nfs4://192.168.1.1:/images:/gnu-linux/archlinux.squashfs
+* squashfs=nfs://192.168.1.1:/images:auto
+
+For local location use **DEVICE:IMAGE\_PATH** syntax for example:
 
 * squashfs=/dev/sda1:/images/archlinux.squashfs
 * squashfs=LABEL=SquashFSImages:/images/archlinux.squashfs
 * squashfs=UUID=3c1d5e55-(...):/images/archlinux.squashfs
 
-It is also possible to type *AUTO* as *PATH*, then script will search for
+It is also possible to type *AUTO* as *IMAGE\_PATH*, then script will search for
 **first file** which name ends with .sfs or .squashfs
 
 *\<image-copy\>* can be one of {true, 1, 0, false} default is false
