@@ -52,7 +52,7 @@ Example with squashfs\_copy:
 to /mnt/origin
 
 If *\<keep-device|>* is set, then the device from which you booted will still be
-accessible at this location when the system has booted.
+accessible at this location.
 
 Moreover, some automatic bind mounts may be performed (useful for instance to
 get access to a writeable /etc). Normally, only /etc needs to be mounted, and
@@ -83,19 +83,23 @@ course, a squashed filesystem, say root.sfs.
 From the service shell right after root system was mounted in initramfs you
 would see this:
 
-* ls /image\_source
-* etc/    data/    root.sfs
+```
+$ ls /image\_source
+etc/    data/    root.sfs
+```
 
 If it also has a .binds file that reads:
 
-* cat /image\_source/.binds
-* etc
-* home=data
+```
+$ cat /image\_source/.binds
+etc
+home=data
+```
 
 Then once the system is booted up you'll see the content of
 
-	* /origin/etc in /etc
-	* /origin/data in /home
+* /origin/etc in /etc
+* /origin/data in /home
 
 **NOTE**: After copying, if access to device was not kept, you can
 remove it from your computer
