@@ -84,14 +84,14 @@ From the service shell right after root system was mounted in initramfs you
 would see this:
 
 ```
-$ ls /image\_source
+$ ls /image_source
 etc/    data/    root.sfs
 ```
 
 If it also has a .binds file that reads:
 
 ```
-$ cat /image\_source/.binds
+$ cat /image_source/.binds
 etc
 home=data
 ```
