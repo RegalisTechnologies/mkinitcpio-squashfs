@@ -11,11 +11,18 @@ List of supported protocols:
   * HTTPS
   * FTP
 
+Finally, to get a writable system, it is possible to keep the device you
+have booted from (this feature is disabled for remote locations).
+
+This makes it possible for instance to bind directories and get a
+somewhat writeable system.
+
 Kernel parameters:
 ------------------
 
 * squashfs=\<image-source\>
 * squashfs\_copy=\<image-copy\>
+* keep\_device=\<location\>
 
 *\<image-source\>* can be remote or local location.
 
@@ -41,7 +48,61 @@ Example with squashfs\_copy:
 
 * squashfs=/dev/sda1:/images/archlinux.squashfs squashfs\_copy=true
 
-**NOTE**: After copying, you can remove device from your computer
+*\<keep-device\>* must be a valid path inside the squashed system and defaults
+to /mnt/origin
+
+If *\<keep-device|>* is set, then the device from which you booted will still be
+accessible at this location.
+
+Moreover, some automatic bind mounts may be performed (useful for instance to
+get access to a writeable /etc). Normally, only /etc needs to be mounted, and
+then the fstab it contains should be able to perform the rest of the bindings
+you wish to have, but this feature allows you to have 'early' mounts if you
+need.
+
+To do so, just create a file called '.binds' at the root of the block device.
+This file must contain one line for each location you want to bind early.
+
+Each of those line consists in the relative path to a location from the root of
+the booted system, that is without the '/' at the begining. If the directory's
+name on the block device is different from the name of the directory where you
+want it bound, add '=' followed by the path relative to the root of the block
+device.
+
+Example:
+
+You want your device kept under /origin (which you must have created in the
+squashed filesystem).
+
+* keep\_device=/origin
+
+The block device you're trying to boot contains the /etc directory, a /data
+directory that you want to use as /home under the booted-up system and, of
+course, a squashed filesystem, say root.sfs.
+
+From the service shell right after root system was mounted in initramfs you
+would see this:
+
+```
+$ ls /image_source
+etc/    data/    root.sfs
+```
+
+If it also has a .binds file that reads:
+
+```
+$ cat /image_source/.binds
+etc
+home=data
+```
+
+Then once the system is booted up you'll see the content of
+
+* /origin/etc in /etc
+* /origin/data in /home
+
+**NOTE**: After copying, if access to device was not kept, you can
+remove it from your computer
 
 mkinitcpio.conf
 ---------------

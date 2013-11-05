@@ -18,7 +18,7 @@
 
 mount_handler_squashfs() {
 	mkdir /image;
-	local tmp device path imagepath imagedev_mountpoint
+	local tmp device path imagepath imagedev_mountpoint can_remove origin
 	imagepath="/image/root.squashfs"
 	imagedev_mountpoint="/image_source"
 	case ${squashfs} in
@@ -26,7 +26,7 @@ mount_handler_squashfs() {
 			echo "Detected remote SquashFS source..."
 			echo "Downloading image...."
 			squashfs_prepare_tmpfs
-			wget ${squashfs} -O /image/root.squashfs
+			wget ${squashfs} -O "${imagepath}"
 			if [[ ! $? -eq 0 ]]; then
 				err "Unable to download SquashFS image from ${squashfs}..."
 				echo "Please check your network connection and image URL..."
@@ -99,7 +99,7 @@ mount_handler_squashfs() {
 				fi
 
 				if [[ ! -r "${path}" ]]; then
-					err "SquashFS image (${path}) is not fund (or it is not readable)"
+					err "SquashFS image (${path}) was not found (or it is not readable)"
 					echo "You are being dropped to a recovery shell"
 					echo " Try to move or link image to ${path}"
 					launch_interactive_shell
@@ -110,7 +110,7 @@ mount_handler_squashfs() {
 					squashfs_prepare_tmpfs
 					echo "Copying SquashFS image to RAM, this can take a while..."
 					pv -pterb "${path}" > "${imagepath}"
-					umount "${imagedev_mountpoint}"
+					can_remove="y"
 				else
 					imagepath="${path}"
 				fi;
@@ -129,6 +129,41 @@ mount_handler_squashfs() {
 			launch_interactive_shell
 		fi
 	fi
+
+	if [[ -n "${keep_device}" ]]
+	then
+		can_remove="n"
+		[[ "${keep_device}" == "y" ]] && keep_device="/mnt/origin"
+		origin="${1%/}${keep_device%/}"
+		if [[ ! -d ${origin} ]] && [[ -z "$(ls ${origin%/*} 2> /dev/null)" ]] # trying to fix a possibly missing location
+		then
+			mount -t tmpfs tmpfs ${origin%/*}
+			mkdir -p ${origin}
+		fi
+		if [[ -d ${origin} ]]
+		then
+			mount --move "${imagedev_mountpoint}" "${origin}"
+		else
+			can_remove="y"
+		fi
+	fi
+
+	if [[ "${can_remove}" = "y" ]]
+	then
+		umount "${imagedev_mountpoint}"
+	else
+		bindings="${origin}/.binds"
+		if [[ -r "${bindings}" ]]
+		then
+			while read LINE
+			do
+				src="${origin}/${LINE#*=}"
+				dst="${1}/${LINE%=*}"
+				mount -o bind "${src}" "${dst}"
+			done < "${origin}/.binds"
+		fi
+	fi
+
 }
 
 squashfs_prepare_tmpfs() {
