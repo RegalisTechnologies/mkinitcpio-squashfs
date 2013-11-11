@@ -27,58 +27,84 @@ build() {
 
 help() {
 	cat <<EOF
-Tis hook allows the user to mount SquashFS image as root.
+This hook allows the user to mount SquashFS image as root.
 
 Image can be stored on local (or remote - read about NBD) block device
-or downloaded from remote location.
+or mounted/downloaded from remote location.
 
 List of supported protocols:
   * HTTP
   * HTTPS
   * FTP
+  * NFS
 
 Kernel parameters:
-==================
+------------------
 
- squashfs=<image-source>
- squashfs_copy=<image-copy>
+* squashfs=<image-source>
+* squashfs_copy=<image-copy>
+* squashfs_source_opts=<image-source-options>
 
-  <image-source> can be remote or local location
-  for remote location just use URL for example:
+*<image-source>* can be remote or local location.
 
-   -> squashfs=http://192.168.1.1/images/archlinux.squashfs
+For remote HTTP(s) or FTP location just use URL for example:
 
-  for local location use DEVICE:PATH syntax for example:
+* squashfs=http://192.168.1.1/images/archlinux.squashfs
 
-   -> squashfs=/dev/sda1:/images/archlinux.squashfs
-   -> squashfs=LABEL=SquashFSImages:/images/archlinux.squashfs
-   -> squashfs=UUID=3c1d5e55-(...):/images/archlinux.squashfs
+For NFS location use following syntax:
 
-  It is also possible to type AUTO as PATH, then script will search for
-  *first file* which name ends with .sfs or .squashfs
+* (nfs|nfs4)://HOST:HOST_PATH:IMAGE_PATH
 
- <image-copy> can be one of {true, 1, 0, false} default is false
+Examples:
 
- If <image-copy> is set to true or 1, then <image-source> will be copied
- to RAM. This option is forced to true while you use remote location.
+* squashfs=nfs://192.168.1.1:/images:archlinux.squashfs
+* squashfs=nfs4://192.168.1.1:/images:/gnu-linux/archlinux.squashfs
+* squashfs=nfs://192.168.1.1:/images:auto
 
- Example with squashfs_copy:
+For local location use **DEVICE:IMAGE_PATH** syntax for example:
 
-   -> squashfs=/dev/sda1:/images/archlinux.squashfs squashfs_copy=true
- 
- NOTE: After copying, you can remove device from your computer
+* squashfs=/dev/sda1:/images/archlinux.squashfs
+* squashfs=LABEL=SquashFSImages:/images/archlinux.squashfs
+* squashfs=UUID=3c1d5e55-(...):/images/archlinux.squashfs
+* squashfs=PARTLABEL=SquashFSImages:/images/archlinux.squashfs
+* squashfs=PARTUUID=3c1d5e55-(...):/images/archlinux.squashfs
+
+For both NFS and local locations, it is also possible to type *AUTO* as *IMAGE_PATH*, then script will search for
+**first file** which name ends with .sfs or .squashfs
+
+*<image-copy>* can be one of {true, 1, 0, false} default is false.
+
+If *<image-copy>* is set to true or 1, then *<image-source>* will be copied
+to RAM. This option is forced to true while you use remote location.
+
+Example with squashfs_copy:
+
+* squashfs=/dev/sda1:/images/archlinux.squashfs squashfs_copy=true
+
+**NOTE**: After copying, you can remove device from your computer.
+
+
+Default mount options
+---------------------
+
+Default mount options for all mounts performed by squashfs hook:
+
+* ro
+
+You can change this with **squashfs_source_opts** parameter.
 
 mkinitcpio.conf
-===============
+---------------
 
- If you are going to use remote locations, add *net* (from mkinitcpio-nfs-utils)
- before *squashfs* for example:
+If you are going to use remote locations, add *net* (from mkinitcpio-nfs-utils)
+before *squashfs* for example:
 
-  -> HOOKS="base udev modconf keyboard block net squashfs filesystems"
+* HOOKS="base udev modconf keyboard **block net** squashfs filesystems"
 
- It is also required to place *block* before squashfs if you will use
- block devices as image source.
+It is also required to place *block* before squashfs if you will use
+block devices as image source.
 
+For NFS support, you need to add **/usr/bin/mount.nfs** and **/usr/bin/mount.nfs4** into BINARIES variable.
 EOF
 }
 

@@ -95,6 +95,8 @@ mount_handler_squashfs() {
 			nfs_host="${nfs_url%%:*}"
 			nfs_path="${nfs_url#*:}"
 			mount_nfs="/usr/bin/mount.${nfs_version}"
+			#!!! TODO: /usr/bin/mount.nfs4 is a symlink to /usr/bin/mount.nfs
+			#!!! TODO: we can't add /usr/bin/mount.nfs4 to BINARIES in mkinitcpio.conf
 
 			if [[ "${nfs_host}" = "${nfs_path}" ]]; then
 				err "Syntax error while parsing squashfs argument..."

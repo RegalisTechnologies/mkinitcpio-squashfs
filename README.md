@@ -4,7 +4,7 @@ mkinitcpio-squashfs
 This hook allows the user to mount SquashFS image as root.
 
 Image can be stored on local (or remote - read about NBD) block device
-or downloaded from remote location.
+or mounted/downloaded from remote location.
 
 List of supported protocols:
   * HTTP
@@ -18,7 +18,6 @@ Kernel parameters:
 * squashfs=\<image-source\>
 * squashfs\_copy=\<image-copy\>
 * squashfs\_source\_opts=\<image-source-options\>
-
 
 *\<image-source\>* can be remote or local location.
 
@@ -41,11 +40,13 @@ For local location use **DEVICE:IMAGE\_PATH** syntax for example:
 * squashfs=/dev/sda1:/images/archlinux.squashfs
 * squashfs=LABEL=SquashFSImages:/images/archlinux.squashfs
 * squashfs=UUID=3c1d5e55-(...):/images/archlinux.squashfs
+* squashfs=PARTLABEL=SquashFSImages:/images/archlinux.squashfs
+* squashfs=PARTUUID=3c1d5e55-(...):/images/archlinux.squashfs
 
-It is also possible to type *AUTO* as *IMAGE\_PATH*, then script will search for
+For both NFS and local locations, it is also possible to type *AUTO* as *IMAGE\_PATH*, then script will search for
 **first file** which name ends with .sfs or .squashfs
 
-*\<image-copy\>* can be one of {true, 1, 0, false} default is false
+*\<image-copy\>* can be one of {true, 1, 0, false} default is false.
 
 If *\<image-copy\>* is set to true or 1, then *\<image-source\>* will be copied
 to RAM. This option is forced to true while you use remote location.
@@ -54,7 +55,17 @@ Example with squashfs\_copy:
 
 * squashfs=/dev/sda1:/images/archlinux.squashfs squashfs\_copy=true
 
-**NOTE**: After copying, you can remove device from your computer
+**NOTE**: After copying, you can remove device from your computer.
+
+
+Default mount options
+---------------------
+
+Default mount options for all mounts performed by squashfs hook:
+
+* ro
+
+You can change this with **squashfs\_source\_opts** parameter.
 
 mkinitcpio.conf
 ---------------
@@ -67,6 +78,7 @@ before *squashfs* for example:
 It is also required to place *block* before squashfs if you will use
 block devices as image source.
 
+For NFS support, you need to add **/usr/bin/mount.nfs** and **/usr/bin/mount.nfs4** into BINARIES variable.
 
 License
 =======
