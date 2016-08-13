@@ -2,6 +2,8 @@
 #
 # Copyright (C) Patryk Jaworski <regalis@regalis.com.pl>
 #
+# https://github.com/RegalisTechnologies/mkinitcpio-squashfs
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -28,6 +30,9 @@ build() {
 help() {
 	cat <<EOF
 This hook allows the user to mount SquashFS image as root.
+
+Latest version of this manual can be found here:
+https://github.com/RegalisTechnologies/mkinitcpio-squashfs
 
 Image can be stored on local (or remote - read about NBD) block device
 or mounted/downloaded from remote location.

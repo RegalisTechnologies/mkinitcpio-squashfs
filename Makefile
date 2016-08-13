@@ -1,6 +1,8 @@
 #
 # Copyright (C) Patryk Jaworski <regalis@regalis.com.pl>
 #
+# https://github.com/RegalisTechnologies/mkinitcpio-squashfs
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -32,4 +34,4 @@ $(DESTDIR):
 $(DESTDIR)/%:
 	@echo "Installing $@"
 
-.PHONY: install uninstall package
+.PHONY: install uninstall

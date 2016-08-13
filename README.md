@@ -2,6 +2,8 @@ mkinitcpio-squashfs
 ===================
 
 This hook allows the user to mount SquashFS image as root.
+The project is developed on Github: https://github.com/RegalisTechnologies/mkinitcpio-squashfs.
+Pull requests with fixes are welcome.
 
 Image can be stored on local (or remote - read about NBD) block device
 or mounted/downloaded from remote location.
@@ -83,7 +85,7 @@ For NFS support, you need to add **/usr/bin/mount.nfs** and **/usr/bin/mount.nfs
 License
 =======
 
-Copyright (C) 2013 Patryk Jaworski \<regalis@regalis.com.pl\>
+Copyright (C) 2013-2016 Patryk Jaworski \<regalis@regalis.com.pl\>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
