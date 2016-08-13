@@ -195,7 +195,7 @@ squashfs_source_postmount() {
 	fi
 
 	if [[ ! -r "${path}" ]]; then
-		err "SquashFS image (${path}) is not fund (or it is not readable)"
+		err "SquashFS image (${path}) was not found (or it is not readable)"
 		echo "You are being dropped to a recovery shell"
 		echo " Try to move or link image to ${path}"
 		launch_interactive_shell
