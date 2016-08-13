@@ -2,6 +2,8 @@
 #
 # Copyright (C) Patryk Jaworski <regalis@regalis.com.pl>
 #
+# https://github.com/RegalisTechnologies/mkinitcpio-squashfs
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -17,22 +19,26 @@
 # 
 
 mount_handler_squashfs() {
-	mkdir /image;
-	local tmp device path imagepath imagedev_mountpoint
-	imagepath="/image/root.squashfs"
-	imagedev_mountpoint="/image_source"
+	local tmp device path imagedev_mountpoint imagedev_opts
+	local nfs_version nfs_url mount_nfs nfs_host nfs_path nfs_options
+	squashfs_imagepath="/squashfs/root.squashfs"
+	imagedev_mountpoint="/squashfs_source"
+	mkdir -p "${imagedev_mountpoint}"
+	mkdir -p "${squashfs_imagepath%/*}"
+	[[ -n "${squashfs_source_opts}" ]] && squashfs_source_opts=",${squashfs_source_opts}"
+
 	case ${squashfs} in
 		http://* | https://* | ftp://* )
-			echo "Detected remote SquashFS source..."
+			msg "Detected remote SquashFS source..."
 			echo "Downloading image...."
 			squashfs_prepare_tmpfs
-			wget ${squashfs} -O /image/root.squashfs
+			wget ${squashfs} -O "${squashfs_imagepath}"
 			if [[ ! $? -eq 0 ]]; then
 				err "Unable to download SquashFS image from ${squashfs}..."
 				echo "Please check your network connection and image URL..."
 				echo "You are being dropped to a recovery shell"
 				echo "  Try to fix the problem - place SquashFS image"
-				echo "  in ${imagepath}"
+				echo "  in ${squashfs_imagepath}"
 				echo
 				echo "  If you will be ready - type 'exit' to try"
 				echo "  and continue booting"
@@ -40,8 +46,8 @@ mount_handler_squashfs() {
 				msg "Trying to continue..."
 			fi
 		;;
-		/dev/* | LABEL=* | UUID=* )
-			echo "Detected local SquashFS source..."
+		/dev/* | LABEL=* | UUID=* | PARTLABEL=* | PARTUUID=* )
+			msg "Detected local SquashFS source..."
 			device="${squashfs%%:*}"
 			path="${squashfs##*:}"
 			if [[ "${device}" = "${path}" ]]; then
@@ -53,16 +59,16 @@ mount_handler_squashfs() {
 				echo "   squashfs=/dev/sda1:AUTO"
 				echo
 				echo "You are being dropped to a recovery shell"
-				echo " Try to place image (or link to it) in ${imagepath}"
+				echo " Try to place image (or link to it) in ${squashfs_imagepath}"
 				echo " or just mount SquashFS image at ${1}"
 				echo 
 				echo "Anyway, good luck..."
 				launch_interactive_shell
 				msg "Trying to continue..."
 			else
-				mkdir "${imagedev_mountpoint}"
 				echo "Trying to mount SquashFS image source (${device})"
-				mount "${device}" "${imagedev_mountpoint}"
+
+				mount "${device}" "${imagedev_mountpoint}" -o ro"${squashfs_source_opts}"
 
 				if [[ ! $? -eq 0 ]]; then
 					err "Unable to mount image source: ${device}"
@@ -81,41 +87,63 @@ mount_handler_squashfs() {
 					msg "Trying to continue (this will most likely fail)..."
 				fi
 
-				if [[ "${path}" = "AUTO" -o "${path}" = "auto" ]]; then
-					echo "Searching for SquashFS images..."
-					path="$(find "${imagedev_mountpoint}" -type f -and \( -name "*.sfs" -or -name "*.squashfs" \) -print -quit)"
-					if [[ -z "${path}" ]]; then
-						err "Unable to find any SquashFS image in ${imagedev_mountpoint}"
-						echo "Umounting ${device}"
-						umount "${device}"
-						echo
-						echo "You are on your own now, try to mount root in ${1}"
-						echo
-						return 1;
-					fi
-					echo "Found SquashFS image in ${path}"
-				else
-					path="${imagedev_mountpoint}/${path}"
-				fi
-
-				if [[ ! -r "${path}" ]]; then
-					err "SquashFS image (${path}) is not fund (or it is not readable)"
-					echo "You are being dropped to a recovery shell"
-					echo " Try to move or link image to ${path}"
-					launch_interactive_shell
-					msg "Trying to continue..."
-				fi
-
-				if [[ "${squashfs_copy}" = "true" -o "${squashfs_copy}" = "1" ]]; then
-					squashfs_prepare_tmpfs
-					echo "Copying SquashFS image to RAM, this can take a while..."
-					pv -pterb "${path}" > "${imagepath}"
-					umount "${imagedev_mountpoint}"
-				else
-					imagepath="${path}"
-				fi;
-				
 			fi
+			squashfs_source_postmount "${imagedev_mountpoint}" "${path}"
+		;;
+		nfs://* | nfs4://* )
+			msg "Detected NFS image source..."
+			nfs_version="${squashfs%%://*}"
+			nfs_url="${squashfs##*://}"
+			nfs_host="${nfs_url%%:*}"
+			nfs_path="${nfs_url#*:}"
+			mount_nfs="/usr/bin/mount.${nfs_version}"
+			#!!! TODO: /usr/bin/mount.nfs4 is a symlink to /usr/bin/mount.nfs
+			#!!! TODO: we can't add /usr/bin/mount.nfs4 to BINARIES in mkinitcpio.conf
+
+			if [[ "${nfs_host}" = "${nfs_path}" ]]; then
+				err "Syntax error while parsing squashfs argument..."
+				echo "Unable to find host or path in \"${nfs_url}\". Did you forget about \":\"?"
+				echo "You are being dropped to a recovery shell"
+				echo " Try to mount SquashFS image in ${1}"
+				launch_interactive_shell
+				return 2
+			fi
+
+			nfs_img_path="${nfs_path##*:}"
+			nfs_path="${nfs_path%%:*}"
+
+			if [[ "${nfs_path}" = "${nfs_img_path}" ]]; then
+				err "Syntax error while parsing squashfs argument..."
+				echo "Unable to find image path in \"${nfs_url}\". Did you forget about \":\"?"
+				echo "You are being dropped to a recovery shell"
+				echo " Try to mount SquashFS image in ${1}"
+				launch_interactive_shell
+				return 3
+			fi
+
+			if [[ ! -x "${mount_nfs}" ]]; then
+				err "Unable to find ${mount_nfs} required to mount NFS location..."
+				echo "Did you forget to add it to initramfs?"
+				echo "Anyway, giving up - no chance to rescue..."
+				return 4
+			fi
+
+			msg "Mounting NFS..."
+
+			"${mount_nfs}" "${nfs_host}":"${nfs_path}" "${imagedev_mountpoint}" -o ro"${squashfs_source_opts}"
+
+			if [[ ! $? -eq 0 ]]; then
+				err "Unable to mount NFS..."
+				echo "You are being dropped to a recovery shell"
+				echo " Try to mount NFS in ${imagedev_mountpoint}"
+				launch_interactive_shell
+			fi
+
+			squashfs_source_postmount "${imagedev_mountpoint}" "${nfs_img_path}"
+		;;
+		* )
+			err "Unsupported squashfs value..."
+			return 100
 		;;
 	esac
 	
@@ -123,7 +151,7 @@ mount_handler_squashfs() {
 	if [[ $? -eq 0 ]]; then
 		echo "Root already mounted, skipping..."
 	else
-		mount -t squashfs "${imagepath}" "$1" -o loop
+		mount -t squashfs "${squashfs_imagepath}" "$1" -o loop
 		if [[ ! $? -eq 0 ]]; then
 			err "Unable to mount SquashFS image..."
 			launch_interactive_shell
@@ -132,8 +160,56 @@ mount_handler_squashfs() {
 }
 
 squashfs_prepare_tmpfs() {
-	mount -t tmpfs tmpfs /image -o size=80%;
-	chmod 0755 /image;
+	mount -t tmpfs tmpfs /squashfs -o size=80%;
+	chmod 0755 /squashfs;
+}
+
+# arguments
+#  $1 search root
+squashfs_search_image() {
+	find "${1}" -type f -and \( -name "*.sfs" -or -name "*.squashfs" \) -print -quit
+}
+
+# arguments
+#  $1 - image source mountpoint
+#  $2 - image path (relative to $1) or one of {AUTO, auto}
+squashfs_source_postmount() {
+	local path imagedev_mountpoint
+	imagedev_mountpoint="$1"
+	path="$2"
+	if [[ "${path}" = "AUTO" -o "${path}" = "auto" ]]; then
+		echo "Searching for SquashFS images..."
+		path="$(squashfs_search_image "${imagedev_mountpoint}")"
+		if [[ -z "${path}" ]]; then
+			err "Unable to find any SquashFS image in ${imagedev_mountpoint}"
+			echo "Umounting ${device}"
+			umount "${device}"
+			echo
+			echo "You are on your own now, try to mount root in ${1}"
+			echo
+			return 1;
+		fi
+		echo "Found SquashFS image in ${path}"
+	else
+		path="${imagedev_mountpoint}/${path}"
+	fi
+
+	if [[ ! -r "${path}" ]]; then
+		err "SquashFS image (${path}) was not found (or it is not readable)"
+		echo "You are being dropped to a recovery shell"
+		echo " Try to move or link image to ${path}"
+		launch_interactive_shell
+		msg "Trying to continue..."
+	fi
+
+	if [[ "${squashfs_copy}" = "true" -o "${squashfs_copy}" = "1" ]]; then
+		squashfs_prepare_tmpfs
+		echo "Copying SquashFS image to RAM, this can take a while..."
+		pv -pterb "${path}" > "${squashfs_imagepath}"
+		umount "${imagedev_mountpoint}"
+	else
+		squashfs_imagepath="${path}"
+	fi;
 }
 
 run_hook() {
