@@ -3,7 +3,7 @@
 pkgname=mkinitcpio-squashfs-git
 pkgver=0.1
 pkgrel=2
-pkgdesc="SquashFS root support for mkinitcpio, local and remote (NBD, HTTP, FTP, NFS) image locations supported"
+pkgdesc="SquashFS root support for mkinitcpio (local and remote image locations supported)"
 arch=("any")
 url="https://github.com/RegalisTechnologies/mkinitcpio-squashfs"
 license=("GPL3")
